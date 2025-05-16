@@ -17,21 +17,12 @@ const userSchema = new mongoose.Schema({
         required:true,
         unique:true
     },
-    password:{
-        type:String,
-        required:true,
-       
-    },
-    role:{
-        type:Number,
-    },
     country_code:{
         type:String,
         required:true
     },
-
 },
 {timestamps:true}
 );
 
-export const User = mongoose.model("User",userSchema);
+export const Customer = mongoose.model("foodlover",userSchema);
