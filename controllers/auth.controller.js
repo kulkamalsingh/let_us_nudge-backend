@@ -222,7 +222,7 @@ export const Login = async (req, res) => {
     console.log('Login attempt for:', email);
 
     const checkByEmail = await User.findOne({ email: email });
-
+console.log(checkByEmail)
     const user = checkByEmail;
     console.log('User found:', user);
 
@@ -267,6 +267,7 @@ export const Login = async (req, res) => {
       return res.json({
         isAuthenticated: false,
         userExisted: true,
+        hasError:false,
         message: "Invalid password"
       });
     }
@@ -275,6 +276,7 @@ export const Login = async (req, res) => {
     console.error('Login error:', error);
     return res.status(500).json({
       isAuthenticated: false,
+      hasError:true,
       message: "Authentication error",
       error: error.message
     });
