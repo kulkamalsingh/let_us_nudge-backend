@@ -2,11 +2,6 @@
 import mongoose from "mongoose";
 
 const TableSchema = new mongoose.Schema({
-  // table_id: {
-  //   type: String,
-  //   required: true,
-  //   unique: true
-  // },
   table_code: {
     type: String,
     required: true
@@ -23,15 +18,9 @@ const TableSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  offer_amount:{
-    type: String,
-    default: null
-
-  },
-  offer_percent:{
-    type: String,
-    default: null
-
+  offer_id:{
+    type:String,
+    default:null
   },
   nudge_active: {
     type: Boolean,

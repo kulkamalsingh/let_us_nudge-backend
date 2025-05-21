@@ -1,6 +1,7 @@
 // controllers/table.controller.js
 import mongoose from "mongoose";
 import Table from "../models/Table.js";
+import { offer } from "../models/offer.model.js";
 
 // Get all tables for a business
 export const getTables = async (req, res) => {
@@ -145,21 +146,10 @@ export const createOffer = async (req, res) => {
   try {
     const { table_id } = req.params;
     const { 
-      table_code, 
-      table_location, 
-      table_capacity, 
-      business_id,
-      offer_amount,
-      offer_percent 
+      offer_type,offer_amount,offer_percentage,offer_code,offer_exp 
     } = req.body;
     
-    // Validate required fields
-    if (!table_code || !table_location || !business_id) {
-      return res.status(400).json({
-        success: false,
-        message: 'Table code, location, and business ID are required'
-      });
-    }
+   
 
     // Check if table exists - using MongoDB _id
     const table = await Table.findOne({ _id: table_id });
@@ -170,47 +160,20 @@ export const createOffer = async (req, res) => {
       });
     }
 
-    // Check if the table belongs to the specified business
-    if (table.business_id !== business_id) {
-      return res.status(403).json({
-        success: false,
-        message: 'Table does not belong to this business'
-      });
-    }
-
-    // Prepare update object with all fields
-    const updateData = { 
-      table_code, 
-      table_location, 
-      table_capacity: table_capacity || 4
-    };
-    
-    // Add offer fields if provided
-    if (offer_amount !== undefined) {
-      updateData.offer_amount = offer_amount;
-    }
-    
-    if (offer_percent !== undefined) {
-      updateData.offer_percent = offer_percent;
-    }
-
-    // Update table using MongoDB _id
-    const updatedTable = await Table.findOneAndUpdate(
-      { _id: table_id },
-      updateData,
-      { new: true } // Return the updated document
-    );
+const newoffer = new offer({offer_type,offer_amount,offer_percentage,offer_code,offer_exp,table_id });
+      
+  await newoffer.save();
 
     return res.status(200).json({
       success: true,
-      message: 'Table updated successfully',
-      data: updatedTable
+      message: 'offer created successfully',
+      data: newoffer
     });
   } catch (error) {
-    console.error('Error updating table:', error);
+    console.error('Error creating offer:', error);
     return res.status(500).json({
       success: false,
-      message: 'Failed to update table',
+      message: 'Failed to create offer',
       error: error.message
     });
   }

@@ -1,6 +1,6 @@
 // routes/table.route.js
 import express from "express";
-import { getTables, addTable, updateTable, deleteTables } from "../controllers/table.controller.js";
+import { getTables, addTable, updateTable, deleteTables, createOffer } from "../controllers/table.controller.js";
 
 const router = express.Router();
 
@@ -11,7 +11,7 @@ router.get('/get-tables', getTables);
 router.post('/add-table', addTable);
 
 // PUT update table
-router.put('/update-table/:table_id', updateTable);
+router.post('/create-offer/:table_id', createOffer);
 
 // DELETE tables
 router.delete('/delete-tables', deleteTables);
