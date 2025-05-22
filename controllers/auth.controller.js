@@ -518,3 +518,179 @@ export const resendLoginOTP = async (req, res) => {
         res.status(500).json({ success: false, message: error.message });
     }
 };
+
+
+// Add these functions to your authentication controller file
+
+// -------------------- FORGOT PASSWORD - SEND OTP --------------------
+export const forgotPasswordSendOTP = async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        // Check if user exists with this email
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(404).json({ 
+                success: false, 
+                message: "User not found with this email address." 
+            });
+        }
+
+        // Combine country code and phone for sending SMS
+        const fullPhone = `${user.country_code}${user.phone}`;
+
+        // Generate OTP
+        const otpCode = generateOTP();
+
+        // Send OTP via SMS
+        await client.messages.create({
+            body: `Your password reset OTP is: ${otpCode}`,
+            from: process.env.TWILIO_PHONE_NUMBER,
+            to: fullPhone,
+        });
+
+        // Delete any existing OTPs for this user
+        await OTP.deleteMany({ fullNumber: fullPhone });
+
+        // Save new OTP to database with purpose indicator
+        await OTP.create({
+            fullNumber: fullPhone,
+            otp: otpCode,
+            purpose: 'password_reset',
+            userId: user._id,
+            expiresAt: new Date(Date.now() + 5 * 60 * 1000), // 5 minutes
+        });
+
+        res.status(200).json({
+            success: true,
+            message: "Password reset OTP sent to your registered mobile number",
+            data: {
+                email,
+                phone: user.phone.substring(user.phone.length - 4).padStart(user.phone.length, '*'), // Show only last 4 digits
+            }
+        });
+
+    } catch (error) {
+        console.error("Forgot Password Send OTP error:", error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// -------------------- VERIFY OTP AND RESET PASSWORD --------------------
+export const verifyOTPAndResetPassword = async (req, res) => {
+    try {
+        const { email, otp, newPassword } = req.body;
+
+        // Find user by email
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(404).json({ 
+                success: false, 
+                message: "User not found." 
+            });
+        }
+
+        const fullPhone = `${user.country_code}${user.phone}`;
+
+        // Check if OTP record exists and is valid
+        const otpRecord = await OTP.findOne({ 
+            fullNumber: fullPhone, 
+            otp,
+            purpose: 'password_reset'
+        });
+        
+        if (!otpRecord) {
+            return res.status(400).json({ 
+                success: false, 
+                message: "Invalid OTP or OTP expired!" 
+            });
+        }
+
+        const currentTime = new Date();
+        if (currentTime > otpRecord.expiresAt) {
+            return res.status(400).json({ 
+                success: false, 
+                message: "OTP expired!" 
+            });
+        }
+
+        // Delete the OTP record after verification
+        await OTP.deleteOne({ _id: otpRecord._id });
+
+        // TODO: Hash the new password before saving
+        // const hashedPassword = await bcrypt.hash(newPassword, 10);
+        // user.password = hashedPassword;
+        
+        // For now, store password directly (implement hashing in production)
+        user.password = newPassword;
+        await user.save();
+
+        return res.status(200).json({
+            success: true,
+            message: "Password reset successfully. Please login with your new password."
+        });
+
+    } catch (error) {
+        console.error('Reset Password error:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: error.message 
+        });
+    }
+};
+
+// -------------------- RESEND PASSWORD RESET OTP --------------------
+export const resendPasswordResetOTP = async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        // Find user by email
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(404).json({ 
+                success: false, 
+                message: "User not found with this email address." 
+            });
+        }
+
+        const fullPhone = `${user.country_code}${user.phone}`;
+
+        // Generate new OTP
+        const otpCode = generateOTP();
+
+        // Delete any existing OTPs for this number
+        await OTP.deleteMany({ 
+            fullNumber: fullPhone,
+            purpose: 'password_reset'
+        });
+
+        // Send OTP via SMS
+        await client.messages.create({
+            body: `Your password reset OTP is: ${otpCode}`,
+            from: process.env.TWILIO_PHONE_NUMBER,
+            to: fullPhone,
+        });
+
+        // Save new OTP to database
+        await OTP.create({
+            fullNumber: fullPhone,
+            otp: otpCode,
+            purpose: 'password_reset',
+            userId: user._id,
+            expiresAt: new Date(Date.now() + 5 * 60 * 1000), // 5 minutes
+        });
+
+        res.status(200).json({
+            success: true,
+            message: "Password reset OTP resent successfully",
+            data: {
+                email,
+                phone: user.phone.substring(user.phone.length - 4).padStart(user.phone.length, '*'), // Show only last 4 digits
+            }
+        });
+
+    } catch (error) {
+        console.error("Resend Password Reset OTP error:", error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+};

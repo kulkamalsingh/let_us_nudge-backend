@@ -8,7 +8,10 @@ import {
     customerLoginSendOTP,
     customerLoginVerifyOTP,
     resendRegistrationOTP,
-    resendLoginOTP
+    resendLoginOTP,
+    forgotPasswordSendOTP,
+    verifyOTPAndResetPassword,
+    resendPasswordResetOTP
 } from '../controllers/auth.controller.js';
 
 const router = express.Router();
@@ -29,5 +32,11 @@ router.post('/send-otp', sendotp);
 router.post('/customer/login/send-otp', customerLoginSendOTP);
 router.post('/customer/login/verify-otp', customerLoginVerifyOTP);
 router.post('/customer/login/resend-otp', resendLoginOTP);
+
+// Password reset routes
+router.post('/forgot-password', forgotPasswordSendOTP);
+router.post('/reset-password', verifyOTPAndResetPassword);
+router.post('/resend-password-reset-otp', resendPasswordResetOTP);
+
 
 export default router;
